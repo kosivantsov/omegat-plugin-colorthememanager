@@ -2,6 +2,9 @@
 
 This is pretty straightforward color theme manager that lets you visualize how certain colors and fonts will look in OmegaT.
 
+<img width="934" height="1006" alt="image" src="https://github.com/user-attachments/assets/92c1054e-9ffe-420e-a060-ef3335db8656" />
+
+
 **Features**
 
 - Live preview of color and font changes
