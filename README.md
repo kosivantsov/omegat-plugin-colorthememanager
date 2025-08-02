@@ -1,0 +1,1 @@
+# omegat-plugin-colorthememanager
