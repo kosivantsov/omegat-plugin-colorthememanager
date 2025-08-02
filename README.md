@@ -58,7 +58,6 @@ A huge thank you to the OmegaT development team for creating and maintaining a C
 
 My gratitude also goes to [Hiroshi Miura](https://github.com/miurahr) and [Briac Pilpré](https://github.com/briacp) for crafting plenty of fantastic OmegaT plugins that serve as my personal inspiration—and my first go-to place for perfectly legal, shameless code stealing. I'm eternally thankful, dudes!
 
-Thank you also to Dmitri Prihodko for implementing a [similar thing in Pascal/Lazarus](https://sourceforge.net/projects/omegat-color-schemes-manager). I can't get that thing to work any more, but now there's no need to.
 Thank you also to Dmitri Prihodko for implementing a similar thing in [similar thing in Pascal/Lazarus](https://sourceforge.net/projects/omegat-color-schemes-manager). I couldn't get his gizmo running these days, but now I don't even need to!
 
 ## Support/Coffee
