@@ -14,30 +14,87 @@ public class ColorPrefManager {
     private final Map<Styles.EditorColor, Color> actualBg = new EnumMap<>(Styles.EditorColor.class);
     private final Map<Styles.EditorColor, Color> defaultBg = new EnumMap<>(Styles.EditorColor.class);
 
-    private static final Set<Styles.EditorColor> fgColors = EnumSet.of(
-            Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG, Styles.EditorColor.COLOR_ACTIVE_TARGET_FG, Styles.EditorColor.COLOR_BIDIMARKERS,
-            Styles.EditorColor.COLOR_FOREGROUND, Styles.EditorColor.COLOR_GLOSSARY_NOTE, Styles.EditorColor.COLOR_GLOSSARY_SOURCE,
-            Styles.EditorColor.COLOR_GLOSSARY_TARGET, Styles.EditorColor.COLOR_HYPERLINK, Styles.EditorColor.COLOR_LANGUAGE_TOOLS,
-            Styles.EditorColor.COLOR_MATCHES_CHANGED, Styles.EditorColor.COLOR_MATCHES_DEL_ACTIVE, Styles.EditorColor.COLOR_MATCHES_DEL_INACTIVE,
-            Styles.EditorColor.COLOR_MATCHES_INS_ACTIVE, Styles.EditorColor.COLOR_MATCHES_INS_INACTIVE, Styles.EditorColor.COLOR_MATCHES_UNCHANGED,
-            Styles.EditorColor.COLOR_MOD_INFO_FG, Styles.EditorColor.COLOR_NBSP, Styles.EditorColor.COLOR_NON_UNIQUE,
-            Styles.EditorColor.COLOR_NOTED_FG, Styles.EditorColor.COLOR_PARAGRAPH_START, Styles.EditorColor.COLOR_PLACEHOLDER,
-            Styles.EditorColor.COLOR_REMOVETEXT_TARGET, Styles.EditorColor.COLOR_SEARCH_FOUND_MARK, Styles.EditorColor.COLOR_SEARCH_REPLACE_MARK,
-            Styles.EditorColor.COLOR_SEGMENT_MARKER_FG, Styles.EditorColor.COLOR_SOURCE_FG, Styles.EditorColor.COLOR_SPELLCHECK,
-          Styles.EditorColor.COLOR_TRANSLATED_FG, Styles.EditorColor.COLOR_TRANSTIPS,
-            Styles.EditorColor.COLOR_UNTRANSLATED_FG, Styles.EditorColor.COLOR_WHITESPACE
-    );
+    private static final Set<Styles.EditorColor> fgColors = buildFgColors();
+    private static final Set<Styles.EditorColor> bgColors = buildBgColors();
 
-    private static final Set<Styles.EditorColor> bgColors = EnumSet.of(
-            Styles.EditorColor.COLOR_ACTIVE_SOURCE, Styles.EditorColor.COLOR_ACTIVE_TARGET, Styles.EditorColor.COLOR_ALIGNER_ACCEPTED,
-            Styles.EditorColor.COLOR_ALIGNER_HIGHLIGHT, Styles.EditorColor.COLOR_ALIGNER_NEEDSREVIEW, Styles.EditorColor.COLOR_ALIGNER_TABLE_ROW_HIGHLIGHT,
-            Styles.EditorColor.COLOR_BACKGROUND, Styles.EditorColor.COLOR_MACHINETRANSLATE_SELECTED_HIGHLIGHT, Styles.EditorColor.COLOR_TERMINOLOGY,
-            Styles.EditorColor.COLOR_MARK_COMES_FROM_TM_X100PC, Styles.EditorColor.COLOR_MARK_COMES_FROM_TM_XAUTO,
-            Styles.EditorColor.COLOR_MARK_COMES_FROM_TM_XENFORCED, Styles.EditorColor.COLOR_MARK_COMES_FROM_TM_XICE, Styles.EditorColor.COLOR_MOD_INFO,
-            Styles.EditorColor.COLOR_NON_UNIQUE_BG, Styles.EditorColor.COLOR_NOTED, Styles.EditorColor.COLOR_NOTIFICATION_MAX,
-            Styles.EditorColor.COLOR_NOTIFICATION_MIN, Styles.EditorColor.COLOR_REPLACE, Styles.EditorColor.COLOR_SEGMENT_MARKER_BG,
-            Styles.EditorColor.COLOR_SOURCE, Styles.EditorColor.COLOR_TRANSLATED, Styles.EditorColor.COLOR_UNTRANSLATED
-    ); // moved out Styles.EditorColor.COLOR_MARK_ALT_TRANSLATION, Styles.EditorColor.COLOR_MARK_COMES_FROM_TM_MT 
+    private static Set<Styles.EditorColor> buildFgColors() {
+        Set<Styles.EditorColor> colors = EnumSet.noneOf(Styles.EditorColor.class);
+        
+        // Add colors that always exist
+        addIfExists(colors, "COLOR_ACTIVE_SOURCE_FG");
+        addIfExists(colors, "COLOR_ACTIVE_TARGET_FG");
+        addIfExists(colors, "COLOR_BIDIMARKERS");
+        addIfExists(colors, "COLOR_FOREGROUND");
+        addIfExists(colors, "COLOR_GLOSSARY_NOTE");
+        addIfExists(colors, "COLOR_GLOSSARY_SOURCE");
+        addIfExists(colors, "COLOR_GLOSSARY_TARGET");
+        addIfExists(colors, "COLOR_HYPERLINK");
+        addIfExists(colors, "COLOR_LANGUAGE_TOOLS");
+        addIfExists(colors, "COLOR_MATCHES_CHANGED");
+        addIfExists(colors, "COLOR_MATCHES_DEL_ACTIVE");
+        addIfExists(colors, "COLOR_MATCHES_DEL_INACTIVE");
+        addIfExists(colors, "COLOR_MATCHES_INS_ACTIVE");
+        addIfExists(colors, "COLOR_MATCHES_INS_INACTIVE");
+        addIfExists(colors, "COLOR_MATCHES_UNCHANGED");
+        addIfExists(colors, "COLOR_MOD_INFO_FG");
+        addIfExists(colors, "COLOR_NBSP");
+        addIfExists(colors, "COLOR_NON_UNIQUE");
+        addIfExists(colors, "COLOR_NOTED_FG");
+        addIfExists(colors, "COLOR_PARAGRAPH_START");
+        addIfExists(colors, "COLOR_PLACEHOLDER");
+        addIfExists(colors, "COLOR_REMOVETEXT_TARGET");
+        addIfExists(colors, "COLOR_SEARCH_FOUND_MARK");
+        addIfExists(colors, "COLOR_SEARCH_REPLACE_MARK");
+        addIfExists(colors, "COLOR_SEGMENT_MARKER_FG");
+        addIfExists(colors, "COLOR_SOURCE_FG");
+        addIfExists(colors, "COLOR_SPELLCHECK");
+        addIfExists(colors, "COLOR_TRANSLATED_FG");
+        addIfExists(colors, "COLOR_TRANSTIPS");
+        addIfExists(colors, "COLOR_UNTRANSLATED_FG");
+        addIfExists(colors, "COLOR_WHITESPACE");
+        
+        return colors;
+    }
+
+    private static Set<Styles.EditorColor> buildBgColors() {
+        Set<Styles.EditorColor> colors = EnumSet.noneOf(Styles.EditorColor.class);
+        
+        addIfExists(colors, "COLOR_ACTIVE_SOURCE");
+        addIfExists(colors, "COLOR_ACTIVE_TARGET");
+        addIfExists(colors, "COLOR_ALIGNER_ACCEPTED");
+        addIfExists(colors, "COLOR_ALIGNER_HIGHLIGHT");
+        addIfExists(colors, "COLOR_ALIGNER_NEEDSREVIEW");
+        addIfExists(colors, "COLOR_ALIGNER_TABLE_ROW_HIGHLIGHT");
+        addIfExists(colors, "COLOR_BACKGROUND");
+        addIfExists(colors, "COLOR_MACHINETRANSLATE_SELECTED_HIGHLIGHT");
+        addIfExists(colors, "COLOR_MARK_ALT_TRANSLATION");
+        addIfExists(colors, "COLOR_TERMINOLOGY");
+        addIfExists(colors, "COLOR_MARK_COMES_FROM_TM_X100PC");
+        addIfExists(colors, "COLOR_MARK_COMES_FROM_TM_XAUTO");
+        addIfExists(colors, "COLOR_MARK_COMES_FROM_TM_XENFORCED");
+        addIfExists(colors, "COLOR_MARK_COMES_FROM_TM_XICE");
+        addIfExists(colors, "COLOR_MOD_INFO");
+        addIfExists(colors, "COLOR_NON_UNIQUE_BG");
+        addIfExists(colors, "COLOR_NOTED");
+        addIfExists(colors, "COLOR_NOTIFICATION_MAX");
+        addIfExists(colors, "COLOR_NOTIFICATION_MIN");
+        addIfExists(colors, "COLOR_REPLACE");
+        addIfExists(colors, "COLOR_SEGMENT_MARKER_BG");
+        addIfExists(colors, "COLOR_SOURCE");
+        addIfExists(colors, "COLOR_TRANSLATED");
+        addIfExists(colors, "COLOR_UNTRANSLATED");
+        
+        return colors;
+    }
+
+    private static void addIfExists(Set<Styles.EditorColor> set, String colorName) {
+        try {
+            Styles.EditorColor color = Styles.EditorColor.valueOf(colorName);
+            set.add(color);
+        } catch (IllegalArgumentException e) {
+            // Color doesn't exist in this OmegaT version, skip it
+        }
+    }
 
     public ColorPrefManager() {
         // Populate actual and default colors

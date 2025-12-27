@@ -57,11 +57,20 @@ public class EditorColorTableUtils {
 
             // Dynamic sample text logic
             if (model.isDynamicSampleRow(row, col) && handler.isIncludeSample()) {
-                if (row == 1 || row == 4 || row == 15) { // source
+                Styles.EditorColor bgColor = model.getBgColorAt(row);
+                Styles.EditorColor fgColor = model.getFgColorAt(row);
+                
+                // Determine if this is a source or target row
+                boolean isSourceRow = (fgColor == Styles.EditorColor.COLOR_SOURCE_FG || 
+                                      (fgColor == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && !model.isBgMenuDisabledRow(row)) ||
+                                      fgColor == Styles.EditorColor.COLOR_UNTRANSLATED_FG);
+                
+                if (isSourceRow) {
                     String srcSample = handler.getSourceSampleText();
                     if (!srcSample.isEmpty())
                         setText(getText() + " " + srcSample);
-                } else if (row == 2 || row == 6) { // target
+                } else {
+                    // This is a target row (including alternative translation)
                     String tgtSample = handler.getTargetSampleText();
                     if (!tgtSample.isEmpty())
                         setText(getText() + " " + tgtSample);
@@ -123,7 +132,15 @@ public class EditorColorTableUtils {
                     prevY = y + wave;
                 }
             }
-            if (row == 7) { // Spelling errors row
+            // Check if this is spelling errors row by checking the fg/bg color combination
+            Styles.EditorColor fgColor = model.getFgColorAt(row);
+            Styles.EditorColor bgColor = model.getBgColorAt(row);
+            if (fgColor == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG && 
+                bgColor == Styles.EditorColor.COLOR_ACTIVE_TARGET && 
+                model.isBgMenuDisabledRow(row) && 
+                !model.isLanguageToolRow(row) && 
+                !model.isGlossaryRow(row)) {
+                // This is likely the spelling errors row - draw red wavy underline
                 Color waveColor = handler.getFgColor(Styles.EditorColor.COLOR_SPELLCHECK);
                 if (waveColor == null) waveColor = Color.RED;
                 g.setColor(waveColor);
@@ -258,10 +275,21 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (row == 5) editEnum = Styles.EditorColor.COLOR_TRANSTIPS;           // Glossary underline
-                else if (row == 9) editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS; // LangTool
-                else if (row == 7) editEnum = Styles.EditorColor.COLOR_SPELLCHECK;     // Spellcheck
-                else return;
+                // Determine which underline color to edit based on the row's foreground color
+                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
+                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS; // Glossary underline
+                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
+                    // Need to distinguish between LanguageTool and Spellcheck
+                    // Check if COLOR_LANGUAGE_TOOLS exists
+                    try {
+                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
+                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS; // Default to LangTool
+                    } catch (IllegalArgumentException e) {
+                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
+                    }
+                } else {
+                    return;
+                }
             }
             Color curr = handler.getFgColor(editEnum);
             Color sel = JColorChooser.showDialog(
@@ -283,10 +311,18 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (row == 5) editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                else if (row == 9) editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                else if (row == 7) editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                else return;
+                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
+                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
+                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
+                    try {
+                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
+                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
+                    } catch (IllegalArgumentException e) {
+                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
+                    }
+                } else {
+                    return;
+                }
             }
             handler.setFgColor(editEnum, handler.getResetFg(editEnum));
             handler.forceUpdateTable();
@@ -298,10 +334,18 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (row == 5) editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                else if (row == 9) editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                else if (row == 7) editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                else return;
+                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
+                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
+                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
+                    try {
+                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
+                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
+                    } catch (IllegalArgumentException e) {
+                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
+                    }
+                } else {
+                    return;
+                }
             }
             copyHex(handler.getFgColor(editEnum));
         });
@@ -311,10 +355,18 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (row == 5) editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                else if (row == 9) editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                else if (row == 7) editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                else return;
+                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
+                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
+                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
+                    try {
+                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
+                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
+                    } catch (IllegalArgumentException e) {
+                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
+                    }
+                } else {
+                    return;
+                }
             }
             Color c = getColorFromClipboard();
             if (c != null) {
