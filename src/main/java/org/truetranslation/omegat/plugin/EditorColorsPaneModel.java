@@ -17,7 +17,7 @@ public class EditorColorsPaneModel extends AbstractTableModel {
 
     private static Object[][] buildRows() {
         List<Object[]> rowList = new ArrayList<>();
-        
+
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row0", "COLOR_FOREGROUND", "COLOR_BACKGROUND", false, false);
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row1", "COLOR_SOURCE_FG", "COLOR_SOURCE", false, false);
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row2", "COLOR_TRANSLATED_FG", "COLOR_TRANSLATED", false, false);
@@ -45,10 +45,10 @@ public class EditorColorsPaneModel extends AbstractTableModel {
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row23", "COLOR_TRANSLATED_FG", "COLOR_MARK_COMES_FROM_TM_XAUTO", false, true);
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row24", "COLOR_TRANSLATED_FG", "COLOR_MARK_COMES_FROM_TM_XENFORCED", false, true);
         addRowIfColorExists(rowList, "ctm.dialog.editorpane.row24a", "COLOR_TRANSLATED_FG", "COLOR_MARK_COMES_FROM_TM_MT", false, true);
-        
+
         return rowList.toArray(new Object[0][]);
     }
-    
+
     private static void addRowIfColorExists(List<Object[]> rowList, String resourceKey, 
                                            String fgColorName, String bgColorName,
                                            boolean bgDisabled, boolean fgDisabled) {
@@ -71,7 +71,6 @@ public class EditorColorsPaneModel extends AbstractTableModel {
 
     public void setParagraphDelimiter(String delimiter) {
         this.paragraphDelimiter = delimiter;
-        // Find the row with COLOR_PARAGRAPH_START and fire update for it
         for (int i = 0; i < ROWS.length; i++) {
             if (ROWS[i][1] == Styles.EditorColor.COLOR_PARAGRAPH_START) {
                 fireTableCellUpdated(i, 0);
@@ -79,14 +78,13 @@ public class EditorColorsPaneModel extends AbstractTableModel {
             }
         }
     }
-    
+
     @Override
     public int getRowCount() { return ROWS.length; }
     @Override
     public int getColumnCount() { return 1; }
     @Override
     public Object getValueAt(int row, int col) {
-        // Check if this is the paragraph delimiter row
         if (ROWS[row][1] == Styles.EditorColor.COLOR_PARAGRAPH_START) {
             if (paragraphDelimiter != null && !paragraphDelimiter.isEmpty()) {
                 return paragraphDelimiter;
@@ -104,31 +102,41 @@ public class EditorColorsPaneModel extends AbstractTableModel {
 
     public boolean isBgMenuDisabledRow(int row) { return (Boolean) ROWS[row][3]; }
     public boolean isFgMenuDisabledRow(int row) { return (Boolean) ROWS[row][4]; }
+
     public boolean isFgMenuUnderlineOnlyRow(int row) {
-        Styles.EditorColor fg = getFgColorAt(row);
-        return fg == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && (Boolean) ROWS[row][3]; // Glossary, LanguageTool, Spellcheck rows
+        return isGlossaryRow(row) || isSpellcheckRow(row) || isLanguageToolRow(row);
     }
     public boolean isWhitespaceRow(int row) { return getFgColorAt(row) == Styles.EditorColor.COLOR_WHITESPACE; }
     public boolean isNbspRow(int row) { return getFgColorAt(row) == Styles.EditorColor.COLOR_NBSP; }
     public boolean isBidiRow(int row) { return getFgColorAt(row) == Styles.EditorColor.COLOR_BIDIMARKERS; }
+
     public boolean isGlossaryRow(int row) { 
-        // Check if this is row that has underline-only and is the glossary row (row 5 in original)
+        // Row 5: Active source fg, bg disabled, preceded by active source row
         return getFgColorAt(row) == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && 
                (Boolean) ROWS[row][3] && 
                row > 0 && 
                getFgColorAt(row-1) == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && 
                !(Boolean) ROWS[row-1][3];
     }
-    public boolean isLanguageToolRow(int row) { 
-        return getFgColorAt(row) == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG && 
-               (Boolean) ROWS[row][3] &&
-               row > 1;
+
+    public boolean isSpellcheckRow(int row) {
+        // Explicitly check for row 7 via its unique label
+        String rowLabel = (String) ROWS[row][0];
+        return rowLabel.equals(res.getString("ctm.dialog.editorpane.row7"));
     }
+
+    public boolean isLanguageToolRow(int row) { 
+        // Explicitly check for row 9 via its unique label
+        String rowLabel = (String) ROWS[row][0];
+        return rowLabel.equals(res.getString("ctm.dialog.editorpane.row9"));
+    }
+
     public boolean isVisible(int row, int col) { return col == 0; }
     public boolean isDynamicSampleRow(int row, int col) {
         if (col != 0) return false;
         Styles.EditorColor fg = getFgColorAt(row);
         Styles.EditorColor bg = getBgColorAt(row);
+
         // Check for source rows
         if (fg == Styles.EditorColor.COLOR_SOURCE_FG || 
             (fg == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && !isBgMenuDisabledRow(row)) ||

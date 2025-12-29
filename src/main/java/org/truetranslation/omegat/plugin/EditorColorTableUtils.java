@@ -59,12 +59,12 @@ public class EditorColorTableUtils {
             if (model.isDynamicSampleRow(row, col) && handler.isIncludeSample()) {
                 Styles.EditorColor bgColor = model.getBgColorAt(row);
                 Styles.EditorColor fgColor = model.getFgColorAt(row);
-                
+
                 // Determine if this is a source or target row
                 boolean isSourceRow = (fgColor == Styles.EditorColor.COLOR_SOURCE_FG || 
                                       (fgColor == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG && !model.isBgMenuDisabledRow(row)) ||
                                       fgColor == Styles.EditorColor.COLOR_UNTRANSLATED_FG);
-                
+
                 if (isSourceRow) {
                     String srcSample = handler.getSourceSampleText();
                     if (!srcSample.isEmpty())
@@ -116,45 +116,31 @@ public class EditorColorTableUtils {
                 g.setColor(underline);
                 g.drawLine(xStart, baseline + 4, xStart + fm.stringWidth(text), baseline + 4);
             }
+
+            // Draw curly underlines for Spellcheck (row 7) and LanguageTool (row 9)
             if (model.isLanguageToolRow(row)) {
                 Color underline = handler.getFgColor(Styles.EditorColor.COLOR_LANGUAGE_TOOLS);
                 if (underline == null) underline = Color.MAGENTA;
-                g.setColor(underline);
-                int width = fm.stringWidth(text);
-                int y = baseline + 4;
-                int period = 7;
-                int amplitude = 2;
-                int prevX = xStart, prevY = y;
-                for (int x = xStart; x < xStart + width; x++) {
-                    int wave = (int) (amplitude * Math.sin(x * 2.0 * Math.PI / period));
-                    if (x > xStart) g.drawLine(prevX, prevY, x, y + wave);
-                    prevX = x;
-                    prevY = y + wave;
-                }
+                drawCurlyUnderline(g, underline, xStart, textWidth, baseline);
             }
-            // Check if this is spelling errors row by checking the fg/bg color combination
-            Styles.EditorColor fgColor = model.getFgColorAt(row);
-            Styles.EditorColor bgColor = model.getBgColorAt(row);
-            if (fgColor == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG && 
-                bgColor == Styles.EditorColor.COLOR_ACTIVE_TARGET && 
-                model.isBgMenuDisabledRow(row) && 
-                !model.isLanguageToolRow(row) && 
-                !model.isGlossaryRow(row)) {
-                // This is likely the spelling errors row - draw red wavy underline
+            if (model.isSpellcheckRow(row)) {
                 Color waveColor = handler.getFgColor(Styles.EditorColor.COLOR_SPELLCHECK);
                 if (waveColor == null) waveColor = Color.RED;
-                g.setColor(waveColor);
-                int width = fm.stringWidth(text);
-                int y = baseline + 4;
-                int period = 7;
-                int amplitude = 2;
-                int prevX = xStart, prevY = y;
-                for (int x = xStart; x < xStart + width; x++) {
-                    int wave = (int) (amplitude * Math.sin(x * 2.0 * Math.PI / period));
-                    if (x > xStart) g.drawLine(prevX, prevY, x, y + wave);
-                    prevX = x;
-                    prevY = y + wave;
-                }
+                drawCurlyUnderline(g, waveColor, xStart, textWidth, baseline);
+            }
+        }
+
+        private void drawCurlyUnderline(Graphics g, Color c, int xStart, int width, int baseline) {
+            g.setColor(c);
+            int y = baseline + 4;
+            int period = 6;
+            int amplitude = 2;
+            int prevX = xStart, prevY = y;
+            for (int x = xStart; x < xStart + width; x++) {
+                int wave = (int) (amplitude * Math.sin((x - xStart) * 2.0 * Math.PI / period));
+                if (x > xStart) g.drawLine(prevX, prevY, x, y + wave);
+                prevX = x;
+                prevY = y + wave;
             }
         }
     }
@@ -195,6 +181,12 @@ public class EditorColorTableUtils {
                 model::isBgMenuDisabledRow,
                 model::isFgMenuDisabledRow,
                 model::isFgMenuUnderlineOnlyRow,
+                (row) -> {
+                    if (model.isGlossaryRow(row)) return Styles.EditorColor.COLOR_TRANSTIPS;
+                    if (model.isLanguageToolRow(row)) return Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
+                    if (model.isSpellcheckRow(row)) return Styles.EditorColor.COLOR_SPELLCHECK;
+                    return null;
+                },
                 handler, globalUpdate);
     }
 
@@ -206,6 +198,7 @@ public class EditorColorTableUtils {
                 model::isBgMenuDisabledRow,
                 model::isFgMenuDisabledRow,
                 (row) -> false,
+                (row) -> null,
                 handler, globalUpdate);
     }
 
@@ -219,6 +212,7 @@ public class EditorColorTableUtils {
             java.util.function.IntPredicate bgMenuDisabled,
             java.util.function.IntPredicate fgMenuDisabled,
             java.util.function.IntPredicate fgUnderlineOnly,
+            java.util.function.IntFunction<Styles.EditorColor> underlineResolver,
             final ColorChangeHandler handler,
             final Runnable globalUpdate) {
 
@@ -274,23 +268,13 @@ public class EditorColorTableUtils {
             Styles.EditorColor fgEnum = fgGetter.apply(row);
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
+
             if (underlineOnly) {
-                // Determine which underline color to edit based on the row's foreground color
-                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
-                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS; // Glossary underline
-                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
-                    // Need to distinguish between LanguageTool and Spellcheck
-                    // Check if COLOR_LANGUAGE_TOOLS exists
-                    try {
-                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
-                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS; // Default to LangTool
-                    } catch (IllegalArgumentException e) {
-                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                    }
-                } else {
-                    return;
-                }
+                Styles.EditorColor resolved = underlineResolver.apply(row);
+                if (resolved != null) editEnum = resolved;
+                else return;
             }
+
             Color curr = handler.getFgColor(editEnum);
             Color sel = JColorChooser.showDialog(
                 table,
@@ -311,18 +295,9 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
-                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
-                    try {
-                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
-                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                    } catch (IllegalArgumentException e) {
-                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                    }
-                } else {
-                    return;
-                }
+                Styles.EditorColor resolved = underlineResolver.apply(row);
+                if (resolved != null) editEnum = resolved;
+                else return;
             }
             handler.setFgColor(editEnum, handler.getResetFg(editEnum));
             handler.forceUpdateTable();
@@ -334,18 +309,9 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
-                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
-                    try {
-                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
-                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                    } catch (IllegalArgumentException e) {
-                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                    }
-                } else {
-                    return;
-                }
+                Styles.EditorColor resolved = underlineResolver.apply(row);
+                if (resolved != null) editEnum = resolved;
+                else return;
             }
             copyHex(handler.getFgColor(editEnum));
         });
@@ -355,18 +321,9 @@ public class EditorColorTableUtils {
             boolean underlineOnly = fgUnderlineOnly.test(row);
             Styles.EditorColor editEnum = fgEnum;
             if (underlineOnly) {
-                if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_SOURCE_FG) {
-                    editEnum = Styles.EditorColor.COLOR_TRANSTIPS;
-                } else if (fgEnum == Styles.EditorColor.COLOR_ACTIVE_TARGET_FG) {
-                    try {
-                        Styles.EditorColor.valueOf("COLOR_LANGUAGE_TOOLS");
-                        editEnum = Styles.EditorColor.COLOR_LANGUAGE_TOOLS;
-                    } catch (IllegalArgumentException e) {
-                        editEnum = Styles.EditorColor.COLOR_SPELLCHECK;
-                    }
-                } else {
-                    return;
-                }
+                Styles.EditorColor resolved = underlineResolver.apply(row);
+                if (resolved != null) editEnum = resolved;
+                else return;
             }
             Color c = getColorFromClipboard();
             if (c != null) {
